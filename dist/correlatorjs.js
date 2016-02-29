@@ -223,7 +223,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 (function (globals) {
 
     var uuid = globals.UuidCrypto.Uuid;
-    var CorrelatorJs = CorrelatorJs;
+    var CorrelatorJs = CorrelatorJs || {};
 
     /* Static module memebers.
     /*********************************************************/

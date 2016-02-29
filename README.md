@@ -10,7 +10,7 @@ A simple angular module providing support for the [correlator sharp package](htt
 
 Cureently the alpha is not published on NPM, will update when beta goes live on NPM.
 
-`npm install angular-correlator-sharp --save`
+`npm install correlatorjs --save`
 
 
 ## Usage
@@ -19,28 +19,24 @@ You can use the provided service to interact with the current scope and create n
 
 ```javascript
 
-	angular
-		.module('myApp', [ 'correlator-sharp' ])
-		.controller('myController', ['$scope', 'csActivityScope', function ($scope, csActivityScope) {
+    // This is the easiest way to create a new scope
+	var scope = new ActivityScope('name_of_scope', null, null);
 
-            // The id of the 'myController_child' scope.
-            $scope.stateChangeCorrelationId = csActivityScope.current.id.value;
+    // Activity scope is really best used as a singleton though.
+    // Change the current scope.        
+    ActivityScope.new('myController');
 
-            // Change the current scope.        
-            csActivityScope.new('myController');
+    // Nest a context as a child scope.
+    ActivityScope.child('myController_child');
 
-            // Nest a context as a child scope.
-            csActivityScope.child('myController_child');
+    // The id of the 'myController_child' scope.
+    var currentCorrelationId = ActivityScope.current.id.value;
 
-            // The id of the 'myController_child' scope.
-            $scope.currentCorrelationId = csActivityScope.current.id.value;
+    // The id of the 'myController' scope.
+    var parentCorrelationId = ActivityScope.current.parent.id.value;
 
-            // The id of the 'myController' scope.
-            $scope.parentCorrelationId = csActivityScope.current.parent.id.value;
-
-            // Generate a new root scope
-            csActivityScope.create('myApp');
-		}]);
+    // Generate a new root scope
+    ActivityScope.create('myApp');
 
 ```
 
@@ -57,15 +53,16 @@ As the package grows and new logging frameworks and front-end frameworks are add
 ### Todo
 
 1. Add support for other app frameworks
-    - Ember
-    - React
-    - Backbone
+    - Ember - I literally have no idea about this framework.
+    - React - Really should be a store in the flux ideal of single direction data flow.
+    - Backbone - This has a sort of implementation in the angul;ar package.
     - etc.
 2. Add support for other client side logging frameworks
     - log4js
+    - logentries
+    - splunk
     - etc
-2. Either break up the project into multiple smaller pieces or improve the build pipeline for building out multiple configurations.
 3. Nail down the scope for the activity in a consistant way
     - Any custom preference is currently supported of course.    
-    - GET (form or page)?
+    - GET (form or page or ajax data)?
     - UI state?

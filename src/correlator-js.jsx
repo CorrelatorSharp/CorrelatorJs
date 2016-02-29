@@ -1,7 +1,7 @@
 (function(globals) {
 
     let uuid = globals.UuidCrypto.Uuid;
-    let CorrelatorJs = CorrelatorJs;
+    let CorrelatorJs = CorrelatorJs || {};
 
 
     /* Static module memebers.
