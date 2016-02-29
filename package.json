@@ -1,0 +1,38 @@
+{
+    "name": "correlatorjs",
+    "version": "0.0.1-beta",
+    "description": "A simple javascript layer that implements the correlator sharp suit of projects.",
+    "scripts": {
+        "test": "karma start karma.conf.js",
+        "build": "brunch build --production"
+    },
+    "keywords": [
+        "correlator-sharp",
+        "correlatorsharp",
+        "correlatorjs",
+        "correlator",
+        "correlation-id"
+    ],
+    "author": {
+        "name": "Jsaon Dryhurst-Smith",
+        "email": "jason@jasonds.co.uk",
+        "url": "jsaonds.co.uk"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/CorrelatorSharp/CorrelatorJs.git"
+    },
+    "license": "MIT",
+    "dependencies": {
+
+    },
+    "devDependencies": {
+        "babel-brunch": "^5.1.2",
+        "jasmine-core": "^2.3.4",
+        "javascript-brunch": "^1.8.0",
+        "karma": "^0.13.15",
+        "karma-firefox-launcher": "^0.1.7",
+        "karma-jasmine": "^0.3.6",
+        "uglify-js-brunch": "^1.7.8"
+    }
+}
