@@ -3,7 +3,7 @@ module.exports = config:
 	minify: yes
 	plugins: 
 		babel: pattern: /\.(es6|jsx)$/
-		uglify: ignored: /CorrelatorJs.js/
+		uglify: ignored: /correlatorjs.js/
 	paths: 
 		public: 'dist'
 		watched: [ 'src' ]

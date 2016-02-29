@@ -1,5 +1,5 @@
 
-[ ![CorrelatorJs](https://travis-ci.org/jasond-s/correlatorjs.svg "Travis Build") ](https://travis-ci.org/jasond-s/CorrelatorJs "CorrelatorJs")
+[![Build Status](https://travis-ci.org/CorrelatorSharp/CorrelatorJs.svg?branch=master)](https://travis-ci.org/CorrelatorSharp/CorrelatorJs)
 
 # angular-correlator-sharp
 
