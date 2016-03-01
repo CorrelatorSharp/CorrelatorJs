@@ -1,14 +1,14 @@
 
-[![Build Status](https://travis-ci.org/CorrelatorSharp/CorrelatorJs.svg?branch=master)](https://travis-ci.org/CorrelatorSharp/CorrelatorJs)
+[![Build Status](https://travis-ci.org/CorrelatorSharp/CorrelatorJs.svg?branch=master)](https://travis-ci.org/CorrelatorSharp/CorrelatorJs) [![npm version](https://badge.fury.io/js/correlatorjs.svg)](https://badge.fury.io/js/correlatorjs)
 
-# angular-correlator-sharp
+# CorrelatorJs
 
-A simple angular module providing support for the [correlator sharp package](https://github.com/CorrelatorSharp/CorrelatorSharp).
+A simple javascript module to support the [correlator sharp package](https://github.com/CorrelatorSharp/CorrelatorSharp).
 
 
 ## Installation
 
-Cureently the alpha is not published on NPM, will update when beta goes live on NPM.
+Currently in beta, so beware.
 
 `npm install correlatorjs --save`
 
@@ -20,7 +20,7 @@ You can use the provided service to interact with the current scope and create n
 ```javascript
 
     // This is the easiest way to create a new scope
-	var scope = new ActivityScope('name_of_scope', null, null);
+    var scope = new ActivityScope('name_of_scope', null, null);
 
     // Activity scope is really best used as a singleton though.
     // Change the current scope.        
