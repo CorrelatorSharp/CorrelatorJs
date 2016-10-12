@@ -1,6 +1,6 @@
 {
     "name": "correlatorjs",
-    "version": "0.0.7-beta",
+    "version": "0.0.8-beta",
     "description": "A simple javascript layer that implements the correlator sharp suit of projects.",
     "scripts": {
         "test": "karma start karma.conf.js",
