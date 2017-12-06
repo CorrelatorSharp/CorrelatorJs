@@ -5,7 +5,7 @@ describe("Test the ActivityScope singleton", function() {
     };
 
     beforeEach(function() {
-    	CorrelatorJs.ActivityScope.current = null;
+    	CorrelatorJs.ActivityScope.clear();
     });
 
     it('should provide a blank activity id', function() {

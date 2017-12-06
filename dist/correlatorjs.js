@@ -1,114 +1,152 @@
 (function() {
   'use strict';
 
-  var globals = typeof window === 'undefined' ? global : window;
+  var globals = typeof global === 'undefined' ? self : global;
   if (typeof globals.require === 'function') return;
 
   var modules = {};
   var cache = {};
-  var has = ({}).hasOwnProperty;
-
   var aliases = {};
+  var has = {}.hasOwnProperty;
 
-  var endsWith = function(str, suffix) {
-    return str.indexOf(suffix, str.length - suffix.length) !== -1;
-  };
-
-  var unalias = function(alias, loaderPath) {
-    var start = 0;
-    if (loaderPath) {
-      if (loaderPath.indexOf('components/' === 0)) {
-        start = 'components/'.length;
-      }
-      if (loaderPath.indexOf('/', start) > 0) {
-        loaderPath = loaderPath.substring(start, loaderPath.indexOf('/', start));
+  var expRe = /^\.\.?(\/|$)/;
+  var expand = function(root, name) {
+    var results = [], part;
+    var parts = (expRe.test(name) ? root + '/' + name : name).split('/');
+    for (var i = 0, length = parts.length; i < length; i++) {
+      part = parts[i];
+      if (part === '..') {
+        results.pop();
+      } else if (part !== '.' && part !== '') {
+        results.push(part);
       }
     }
-    var result = aliases[alias + '/index.js'] || aliases[loaderPath + '/deps/' + alias + '/index.js'];
-    if (result) {
-      return 'components/' + result.substring(0, result.length - '.js'.length);
-    }
-    return alias;
+    return results.join('/');
   };
 
-  var expand = (function() {
-    var reg = /^\.\.?(\/|$)/;
-    return function(root, name) {
-      var results = [], parts, part;
-      parts = (reg.test(name) ? root + '/' + name : name).split('/');
-      for (var i = 0, length = parts.length; i < length; i++) {
-        part = parts[i];
-        if (part === '..') {
-          results.pop();
-        } else if (part !== '.' && part !== '') {
-          results.push(part);
-        }
-      }
-      return results.join('/');
-    };
-  })();
   var dirname = function(path) {
     return path.split('/').slice(0, -1).join('/');
   };
 
   var localRequire = function(path) {
-    return function(name) {
+    return function expanded(name) {
       var absolute = expand(dirname(path), name);
       return globals.require(absolute, path);
     };
   };
 
   var initModule = function(name, definition) {
-    var module = {id: name, exports: {}};
+    var hot = hmr && hmr.createHot(name);
+    var module = {id: name, exports: {}, hot: hot};
     cache[name] = module;
     definition(module.exports, localRequire(name), module);
     return module.exports;
   };
 
+  var expandAlias = function(name) {
+    return aliases[name] ? expandAlias(aliases[name]) : name;
+  };
+
+  var _resolve = function(name, dep) {
+    return expandAlias(expand(dirname(name), dep));
+  };
+
   var require = function(name, loaderPath) {
-    var path = expand(name, '.');
     if (loaderPath == null) loaderPath = '/';
-    path = unalias(name, loaderPath);
+    var path = expandAlias(name);
 
     if (has.call(cache, path)) return cache[path].exports;
     if (has.call(modules, path)) return initModule(path, modules[path]);
 
-    var dirIndex = expand(path, './index');
-    if (has.call(cache, dirIndex)) return cache[dirIndex].exports;
-    if (has.call(modules, dirIndex)) return initModule(dirIndex, modules[dirIndex]);
-
-    throw new Error('Cannot find module "' + name + '" from '+ '"' + loaderPath + '"');
+    throw new Error("Cannot find module '" + name + "' from '" + loaderPath + "'");
   };
 
   require.alias = function(from, to) {
     aliases[to] = from;
   };
 
+  var extRe = /\.[^.\/]+$/;
+  var indexRe = /\/index(\.[^\/]+)?$/;
+  var addExtensions = function(bundle) {
+    if (extRe.test(bundle)) {
+      var alias = bundle.replace(extRe, '');
+      if (!has.call(aliases, alias) || aliases[alias].replace(extRe, '') === alias + '/index') {
+        aliases[alias] = bundle;
+      }
+    }
+
+    if (indexRe.test(bundle)) {
+      var iAlias = bundle.replace(indexRe, '');
+      if (!has.call(aliases, iAlias)) {
+        aliases[iAlias] = bundle;
+      }
+    }
+  };
+
   require.register = require.define = function(bundle, fn) {
-    if (typeof bundle === 'object') {
+    if (bundle && typeof bundle === 'object') {
       for (var key in bundle) {
         if (has.call(bundle, key)) {
-          modules[key] = bundle[key];
+          require.register(key, bundle[key]);
         }
       }
     } else {
       modules[bundle] = fn;
+      delete cache[bundle];
+      addExtensions(bundle);
     }
   };
 
   require.list = function() {
-    var result = [];
+    var list = [];
     for (var item in modules) {
       if (has.call(modules, item)) {
-        result.push(item);
+        list.push(item);
       }
     }
-    return result;
+    return list;
   };
 
+  var hmr = globals._hmr && new globals._hmr(_resolve, require, modules, cache);
+  require._cache = cache;
+  require.hmr = hmr && hmr.wrap;
   require.brunch = true;
   globals.require = require;
 })();
+
+(function() {
+var global = typeof window === 'undefined' ? this : window;
+var __makeRelativeRequire = function(require, mappings, pref) {
+  var none = {};
+  var tryReq = function(name, pref) {
+    var val;
+    try {
+      val = require(pref + '/node_modules/' + name);
+      return val;
+    } catch (e) {
+      if (e.toString().indexOf('Cannot find module') === -1) {
+        throw e;
+      }
+
+      if (pref.indexOf('node_modules') !== -1) {
+        var s = pref.split('/');
+        var i = s.lastIndexOf('node_modules');
+        var newPref = s.slice(0, i).join('/');
+        return tryReq(name, newPref);
+      }
+    }
+    return none;
+  };
+  return function(name) {
+    if (name in mappings) name = mappings[name];
+    if (!name) return;
+    if (name[0] !== '.' && pref) {
+      var val = tryReq(name, pref);
+      if (val !== none) return val;
+    }
+    return require(name);
+  }
+};
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -245,10 +283,62 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     /* ActivityScope - Core of the library.
     /*********************************************************/
 
-    var activityScope = null;
+    // let activityScopeSingleton = null;
 
-    function activityScopeFactory(name, parent, seed) {
-        return activityScope = new ActivityScope(name, parent, new uuid(seed));
+    function peek(stack) {
+        if (stack.length < 1) {
+            return null;
+        }
+
+        return stack[stack.length - 1];
+    }
+
+    var ActivityTracker = (function () {
+        function ActivityTracker() {
+            _classCallCheck(this, ActivityTracker);
+
+            this.activityStack = [];
+        }
+
+        _createClass(ActivityTracker, [{
+            key: 'start',
+            value: function start(newActivityScope) {
+                if (newActivityScope === null) {
+                    return;
+                }
+                this.activityStack.push(newActivityScope);
+            }
+        }, {
+            key: 'end',
+            value: function end(oldActivityScope) {
+                while (this.activityStack.pop() != oldActivityScope) {}
+            }
+        }, {
+            key: 'find',
+            value: function find(id) {
+                return this.activityStack.filter(function (e) {
+                    return e.id === id;
+                }).pop();
+            }
+        }, {
+            key: 'clear',
+            value: function clear() {
+                this.activityStack = [];
+            }
+        }, {
+            key: 'current',
+            get: function get() {
+                return peek(this.activityStack);
+            }
+        }]);
+
+        return ActivityTracker;
+    })();
+
+    var activityTracker = new ActivityTracker();
+
+    function activityScopeFactory(name, seed) {
+        return new ActivityScope(name, activityTracker.current, new uuid(seed));
     }
 
     var ActivityScope = (function () {
@@ -270,6 +360,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             this.innerid = seed || new uuid();
             this.innername = name;
             this.innerparent = parent || null;
+
+            activityTracker.start(this);
         }
 
         _createClass(ActivityScope, [{
@@ -299,27 +391,34 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             // Creation members.
 
             value: function create(name, seed) {
-                return activityScopeFactory(name, null, seed);
+                activityTracker.clear();
+                return activityScopeFactory(name, seed);
             }
         }, {
             key: 'child',
             value: function child(name, seed) {
-                return activityScopeFactory(name, activityScope, seed);
+                return activityScopeFactory(name, seed);
             }
         }, {
             key: 'new',
             value: function _new(name, seed) {
-                return activityScopeFactory(name, activityScope.parent, seed);
+                activityTracker.end(this.current);
+                return activityScopeFactory(name, seed);
+            }
+        }, {
+            key: 'clear',
+            value: function clear() {
+                activityTracker.clear();
             }
         }, {
             key: 'current',
             get: function get() {
-                return activityScope;
+                return activityTracker.current;
             },
             set: function set(value) {
                 if (value && !(value instanceof ActivityScope)) throw new Error("Can't set value of activity scope to be anything but activity scope type.");
 
-                activityScope = value;
+                activityTracker.start(value);
             }
         }]);
 
@@ -334,4 +433,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     globals.CorrelatorJs = (globals.module || {}).exports = CorrelatorJs;
 })(window || global);
 var window, global;
+
+require.register("___globals___", function(exports, require, module) {
+  
+});})();require('___globals___');
 

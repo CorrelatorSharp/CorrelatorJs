@@ -20,12 +20,54 @@
     /* ActivityScope - Core of the library.
     /*********************************************************/
 
-    let activityScope = null;
+    // let activityScopeSingleton = null;
 
-    function activityScopeFactory(name, parent, seed) {
-        return activityScope = new ActivityScope(name, parent, new uuid(seed));
+    function peek (stack) {
+        if (stack.length < 1) {
+            return null;
+        }
+
+        return stack[stack.length-1];
     }
 
+    class ActivityTracker {
+
+        constructor () {
+            this.activityStack = [];
+        }
+
+        get current() {
+            return peek(this.activityStack);
+        }
+
+        start (newActivityScope) {
+            if (newActivityScope === null) {
+                return;
+            }
+            this.activityStack.push(newActivityScope);
+        }
+
+        end (oldActivityScope) {
+            while (this.activityStack.pop() != oldActivityScope) { }
+        }
+
+        find (id) {
+            return this.activityStack.filter(function (e) {
+                return e.id === id;
+            }).pop();
+        }
+
+        clear () {
+            this.activityStack = [];
+        }
+    }
+
+    let activityTracker = new ActivityTracker();
+    
+    function activityScopeFactory(name, seed) {
+        return new ActivityScope(name, activityTracker.current, new uuid(seed));
+    }
+   
     class ActivityScope {
 
         /* Instance class memebers.
@@ -43,6 +85,8 @@
             this.innerid = seed || new uuid();
             this.innername = name;
             this.innerparent = parent || null;
+            
+            activityTracker.start(this);
         }
 
         get id() {
@@ -64,28 +108,34 @@
         // Access memebers
 
         static get current() {
-            return activityScope;
+            return activityTracker.current;
         }
 
         static set current(value) {
             if (value && !(value instanceof ActivityScope))
                 throw new Error("Can't set value of activity scope to be anything but activity scope type.")
 
-            activityScope = value;
+            activityTracker.start(value);
         }
 
         // Creation members.
 
         static create(name, seed) {
-            return activityScopeFactory(name, null, seed);
+            activityTracker.clear();
+            return activityScopeFactory(name, seed);
         }
 
         static child(name, seed) {
-            return activityScopeFactory(name, activityScope, seed);
+            return activityScopeFactory(name, seed);
         }
 
         static new(name, seed) {
-            return activityScopeFactory(name, activityScope.parent, seed);
+            activityTracker.end(this.current);
+            return activityScopeFactory(name, seed);
+        }
+
+        static clear() {
+            activityTracker.clear();
         }
     }
 

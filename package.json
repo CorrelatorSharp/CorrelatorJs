@@ -1,7 +1,7 @@
 {
     "name": "correlatorjs",
-    "version": "0.0.8-beta",
-    "description": "A simple javascript layer that implements the correlator sharp suit of projects.",
+    "version": "0.1.0",
+    "description": "A simple javascript layer that implements the correlator sharp standard.",
     "scripts": {
         "test": "karma start karma.conf.js",
         "build": "brunch build --production"
@@ -14,7 +14,7 @@
         "correlation-id"
     ],
     "author": {
-        "name": "Jsaon Dryhurst-Smith",
+        "name": "Jason Dryhurst-Smith",
         "email": "jason@jasonds.co.uk",
         "url": "jsaonds.co.uk"
     },
